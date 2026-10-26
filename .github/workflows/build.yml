@@ -33,8 +33,11 @@ jobs:
           cd app_project
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>' android/app/src/main/AndroidManifest.xml
           sed -i 's/<application/<application android:hardwareAccelerated="true"/g' android/app/src/main/AndroidManifest.xml
-          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
-          sed -i 's/versionCode flutterVersionCode.toInteger()/versionCode 11/g' android/app/build.gradle
+          
+          # استبدال شامل ودقيق لـ minSdkVersion ليصبح 21 بدون فشل
+          sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle
+          sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' android/app/build.gradle
+          sed -i 's/versionCode.*/versionCode 11/g' android/app/build.gradle
 
       - name: Write Full Optimized Flutter Code
         run: |
@@ -48,7 +51,7 @@ jobs:
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
             
-            // تهيئة خدمة OneSignal للإشعارات
+            // تهيئة OneSignal
             OneSignal.Debug.setLogLevel(OSLogLevel.none);
             OneSignal.initialize("e405d6b4-3828-482c-b294-5a77c30cdd9a");
             OneSignal.Notifications.requestPermission(true);
@@ -107,7 +110,6 @@ jobs:
                     .setMediaPlaybackRequiresUserGesture(false);
               }
 
-              // الاستماع للإشعارات الواردة وتمرير بياناتها لصفحة بلوجر
               OneSignal.Notifications.addForegroundWillDisplayListener((event) {
                 final notif = event.notification;
                 final title = (notif.title ?? 'تنبيه جديد').replaceAll("'", "\\'");
