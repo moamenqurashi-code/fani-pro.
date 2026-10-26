@@ -28,6 +28,27 @@ jobs:
           flutter pub add onesignal_flutter
           flutter pub add share_plus
 
+      - name: Write Clean Root build.gradle with Kotlin 1.9.10
+        run: |
+          cat << 'EOF' > app_project/android/build.gradle
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.buildDir = '../build'
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+              project.evaluationDependsOn(':app')
+          }
+
+          tasks.register("clean", Delete) {
+              delete rootProject.buildDir
+          }
+          EOF
+
       - name: Write AndroidManifest
         run: |
           cat << 'EOF' > app_project/android/app/src/main/AndroidManifest.xml
@@ -65,7 +86,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: Write build.gradle Cleanly
+      - name: Write app build.gradle Cleanly
         run: |
           cat << 'EOF' > app_project/android/app/build.gradle
           plugins {
@@ -108,7 +129,37 @@ jobs:
           }
           EOF
 
-      - name: Write Full Optimized Flutter Code
+      - name: Write settings.gradle with Kotlin 1.9.10
+        run: |
+          cat << 'EOF' > app_project/android/settings.gradle
+          pluginManagement {
+              def flutterSdkPath = {
+                  def properties = new Properties()
+                  file("local.properties").withInputStream { properties.load(it) }
+                  def flutterSdkPath = properties.getProperty("flutter.sdk")
+                  assert flutterSdkPath != null : "flutter.sdk not set in local.properties"
+                  return flutterSdkPath
+              }()
+
+              includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          plugins {
+              id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+              id "com.android.application" version "8.2.1" apply false
+              id "org.jetbrains.kotlin.android" version "1.9.10" apply false
+          }
+
+          include ":app"
+          EOF
+
+      - name: Write Full Flutter Code
         run: |
           cat << 'EOF' > app_project/lib/main.dart
           import 'package:flutter/material.dart';
@@ -120,6 +171,7 @@ jobs:
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
             
+            // تهيئة خدمة OneSignal الأصلية
             OneSignal.Debug.setLogLevel(OSLogLevel.none);
             OneSignal.initialize("e405d6b4-3828-482c-b294-5a77c30cdd9a");
             OneSignal.Notifications.requestPermission(true);
@@ -161,9 +213,7 @@ jobs:
                 )
                 ..setNavigationDelegate(
                   NavigationDelegate(
-                    onPageStarted: (String url) {
-                      setState(() => _isLoading = true);
-                    },
+                    onPageStarted: (String url) => setState(() => _isLoading = true),
                     onPageFinished: (String url) {
                       setState(() => _isLoading = false);
                       controller.runJavaScript("if (window.updateBadgeUI) { window.updateBadgeUI(); }");
@@ -178,6 +228,7 @@ jobs:
                     .setMediaPlaybackRequiresUserGesture(false);
               }
 
+              // استقبال الإشعار وتمريره للصفحة أثناء فتح التطبيق
               OneSignal.Notifications.addForegroundWillDisplayListener((event) {
                 final notif = event.notification;
                 final title = (notif.title ?? 'تنبيه جديد').replaceAll("'", "\\'");
@@ -192,6 +243,14 @@ jobs:
                     window.saveIncomingNotification('$title', '$body', '$launchUrl');
                   }
                 """);
+              });
+
+              // عند ضغط الطالب على الإشعار من شريط التنبيهات وهو خارج التطبيق
+              OneSignal.Notifications.addClickListener((event) {
+                final launchUrl = event.notification.additionalData?['launch_url'];
+                if (launchUrl != null && launchUrl.toString().isNotEmpty) {
+                  controller.loadRequest(Uri.parse(launchUrl.toString()));
+                }
               });
 
               _controller = controller;
