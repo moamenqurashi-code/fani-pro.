@@ -1,4 +1,4 @@
-name: Build Fani Pro AAB
+name: Build Fani Pro AAB and APK
 
 on:
   workflow_dispatch:
@@ -84,13 +84,16 @@ jobs:
           }
           EOF
 
-      - name: Build Android App Bundle (AAB)
+      - name: Build Both AAB and APK
         run: |
           cd app_project
           flutter build appbundle --release --no-pub
+          flutter build apk --release --no-pub
 
-      - name: Upload Artifact
+      - name: Upload Both Files
         uses: actions/upload-artifact@v4
         with:
-          name: fani-pro-release
-          path: app_project/build/app/outputs/bundle/release/app-release.aab
+          name: fani-pro-packages
+          path: |
+            app_project/build/app/outputs/bundle/release/app-release.aab
+            app_project/build/app/outputs/flutter-apk/app-release.apk
