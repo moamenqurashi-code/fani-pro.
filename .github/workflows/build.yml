@@ -288,7 +288,6 @@ jobs:
                 body: ListView(
                   padding: const EdgeInsets.fromLTRB(6, 12, 6, 90),
                   children: [
-                    // صف أدوات الطالب العلوية الـ 4
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Row(
@@ -338,7 +337,6 @@ jobs:
                     ),
                     const SizedBox(height: 14),
 
-                    // قسم منهج 2027
                     _buildSectionHeader(Icons.menu_book, 'منهج 2027 | كل التخصصات كل الاقسام', textColor),
                     _buildGrid2([
                       _buildGridCard(
@@ -346,7 +344,7 @@ jobs:
                         tag: '500 ملف',
                         tagColor: const Color(0xFF10B981),
                         gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-                        icon: Icons.Collections_bookmark,
+                        icon: Icons.collections_bookmark,
                         viewsKey: 'view_memo_2027',
                         badgeText: 'تحميل سريع',
                         badgeIcon: Icons.download,
@@ -490,7 +488,7 @@ jobs:
                         tag: 'تسجيل الرغبات',
                         tagColor: const Color(0xFF0284C7),
                         gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
-                        icon: Icons.Important_devices,
+                        icon: Icons.important_devices,
                         viewsKey: 'view_coord_2027',
                         badgeText: 'رسمي ومباشر',
                         badgeIcon: Icons.public,
@@ -551,7 +549,6 @@ jobs:
                     ]),
 
                     const SizedBox(height: 12),
-                    // 5. أدوات المذاكرة الـ 4 التفاعلية الكاملة
                     _buildSectionHeader(Icons.home_repair_service, 'أدوات المذاكرة', textColor, iconBg: const [Color(0xFF06B6D4), Color(0xFF0284C7)]),
                     _buildGrid2([
                       _buildGridCard(
@@ -621,7 +618,6 @@ jobs:
                     ]),
 
                     const SizedBox(height: 12),
-                    // خدمات الوزارة
                     _buildSectionHeader(Icons.account_balance, 'خدمات الوزارة للطلاب 2026', textColor),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -683,7 +679,6 @@ jobs:
                     ),
 
                     const SizedBox(height: 12),
-                    // منصة المدرس المعتمد والمعلنين
                     _buildSectionHeader(Icons.cast_for_education, 'منصة المدرس المعتمد والمعلنين', textColor),
                     _buildGrid2([
                       _buildGridCard(
@@ -725,7 +720,6 @@ jobs:
                     ]),
 
                     const SizedBox(height: 12),
-                    // خدمات أخرى
                     _buildSectionHeader(Icons.grid_view_rounded, 'خدمات اخري', textColor),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -801,7 +795,6 @@ jobs:
                     ),
 
                     const SizedBox(height: 12),
-                    // شات الطلاب المباشر
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                       child: Row(
@@ -1248,7 +1241,7 @@ jobs:
                             Navigator.pop(context);
                             openEngineering();
                           }, textColor),
-                          _drawerTile(Icons.Collections_bookmark, 'مكتبة المذكرات والمراجعات 2027', () => openUrl('/p/notes-2027.html'), textColor),
+                          _drawerTile(Icons.collections_bookmark, 'مكتبة المذكرات والمراجعات 2027', () => openUrl('/p/notes-2027.html'), textColor),
                           _drawerTile(Icons.description, 'بنك الاختبارات النهائية 2027', () => openUrl('/p/exams-2027.html'), textColor),
                           _drawerTile(Icons.assessment, 'خدمات نتائج الامتحانات 2027', () => openUrl('/p/results-2027.html'), textColor),
                           _drawerTile(Icons.forum, 'شات الطلاب المباشر', () => openUrl('/p/student-chat.html'), textColor),
@@ -1275,7 +1268,6 @@ jobs:
             }
           }
 
-          // ================= 1. شاشة كشكول المذاكرة (10 ورقات سلك) =================
           class NotebookScreen extends StatefulWidget {
             final SharedPreferences prefs;
             const NotebookScreen({super.key, required this.prefs});
@@ -1458,7 +1450,6 @@ jobs:
             bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
           }
 
-          // ================= 2. الآلة الحاسبة الذكية =================
           class CalculatorDialog extends StatefulWidget {
             const CalculatorDialog({super.key});
 
@@ -1572,7 +1563,6 @@ jobs:
             }
           }
 
-          // ================= 3. جدول دروسي ومواعيدي =================
           class ScheduleDialog extends StatefulWidget {
             final SharedPreferences prefs;
             const ScheduleDialog({super.key, required this.prefs});
@@ -1690,7 +1680,6 @@ jobs:
             }
           }
 
-          // ================= 4. كراسة الرسم الهندسي =================
           class EngineeringBoardScreen extends StatefulWidget {
             const EngineeringBoardScreen({super.key});
 
