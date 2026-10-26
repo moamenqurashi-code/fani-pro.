@@ -95,19 +95,16 @@ jobs:
                     },
                     onPageFinished: (String url) {
                       setState(() => _isLoading = false);
-                      // تحديث عداد الجرس وتنسيق الواجهة فور تحميل أي صفحة
                       controller.runJavaScript("if (window.updateBadgeUI) { window.updateBadgeUI(); }");
                     },
                   ),
                 )
                 ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/'));
 
-              // تفعيل تسريع الرسوم وحفظ التخزين الداخلي (حفظ التقدم)
               if (controller.platform is AndroidWebViewController) {
                 AndroidWebViewController.enableDebugging(false);
-                final androidController = controller.platform as AndroidWebViewController;
-                androidController.setMediaPlaybackRequiresUserGesture(false);
-                androidController.setDomStorageEnabled(true);
+                (controller.platform as AndroidWebViewController)
+                    .setMediaPlaybackRequiresUserGesture(false);
               }
 
               // الاستماع للإشعارات الواردة وتمرير بياناتها لصفحة بلوجر
