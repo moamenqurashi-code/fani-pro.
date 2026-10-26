@@ -1,4 +1,4 @@
-name: Build Fani Pro AAB and APK
+name: Build Fani Pro Native App
 
 on:
   workflow_dispatch:
@@ -19,265 +19,290 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      - name: Create Flutter Project
+      - name: Create Clean Flutter Project
         run: |
           flutter create --org com.pro.ap4016842 --project-name skn app_project
           cd app_project
-          flutter pub add webview_flutter
-          flutter pub add webview_flutter_android
-          flutter pub add onesignal_flutter
+          flutter pub add http
           flutter pub add share_plus
+          flutter pub add url_launcher
+          flutter pub add shared_preferences
 
-      - name: Write Clean Root build.gradle with Kotlin 1.9.10
+      - name: Setup Android Permissions and Labels
         run: |
-          cat << 'EOF' > app_project/android/build.gradle
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
+          cd app_project
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="skn"/android:label="فني برو"/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/versionCode flutterVersionCode.toInteger()/versionCode 11/g' android/app/build.gradle
+          sed -i 's/versionName flutterVersionName/versionName "1.1"/g' android/app/build.gradle
 
-          rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "${rootProject.buildDir}/${project.name}"
-              project.evaluationDependsOn(':app')
-          }
-
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-
-      - name: Write AndroidManifest
-        run: |
-          cat << 'EOF' > app_project/android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-
-              <application
-                  android:label="فني برو"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher"
-                  android:hardwareAccelerated="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                        android:name="io.flutter.embedding.android.NormalTheme"
-                        android:resource="@style/NormalTheme"
-                        />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-          </manifest>
-          EOF
-
-      - name: Write app build.gradle Cleanly
-        run: |
-          cat << 'EOF' > app_project/android/app/build.gradle
-          plugins {
-              id "com.android.application"
-              id "kotlin-android"
-              id "dev.flutter.flutter-gradle-plugin"
-          }
-
-          android {
-              namespace = "com.pro.ap4016842.skn"
-              compileSdk = 34
-              ndkVersion = flutter.ndkVersion
-
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_1_8
-                  targetCompatibility = JavaVersion.VERSION_1_8
-              }
-
-              kotlinOptions {
-                  jvmTarget = "1.8"
-              }
-
-              defaultConfig {
-                  applicationId = "com.pro.ap4016842.skn"
-                  minSdk = 21
-                  targetSdk = 34
-                  versionCode = 11
-                  versionName = "1.1"
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig = signingConfigs.debug
-                  }
-              }
-          }
-
-          flutter {
-              source = "../.."
-          }
-          EOF
-
-      - name: Write settings.gradle with Kotlin 1.9.10
-        run: |
-          cat << 'EOF' > app_project/android/settings.gradle
-          pluginManagement {
-              def flutterSdkPath = {
-                  def properties = new Properties()
-                  file("local.properties").withInputStream { properties.load(it) }
-                  def flutterSdkPath = properties.getProperty("flutter.sdk")
-                  assert flutterSdkPath != null : "flutter.sdk not set in local.properties"
-                  return flutterSdkPath
-              }()
-
-              includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-
-          plugins {
-              id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-              id "com.android.application" version "8.2.1" apply false
-              id "org.jetbrains.kotlin.android" version "1.9.10" apply false
-          }
-
-          include ":app"
-          EOF
-
-      - name: Write Full Flutter Code
+      - name: Generate Complete Native Flutter Application
         run: |
           cat << 'EOF' > app_project/lib/main.dart
+          import 'dart:convert';
           import 'package:flutter/material.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
-          import 'package:webview_flutter_android/webview_flutter_android.dart';
-          import 'package:onesignal_flutter/onesignal_flutter.dart';
+          import 'package:http/http.dart' as http;
           import 'package:share_plus/share_plus.dart';
+          import 'package:url_launcher/url_launcher.dart';
 
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
-            
-            // تهيئة خدمة OneSignal الأصلية
-            OneSignal.Debug.setLogLevel(OSLogLevel.none);
-            OneSignal.initialize("e405d6b4-3828-482c-b294-5a77c30cdd9a");
-            OneSignal.Notifications.requestPermission(true);
-
-            runApp(const MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: FaniProScreen(),
-            ));
+            runApp(const FaniProApp());
           }
 
-          class FaniProScreen extends StatefulWidget {
-            const FaniProScreen({super.key});
+          class FaniProApp extends StatelessWidget {
+            const FaniProApp({super.key});
 
             @override
-            State<FaniProScreen> createState() => _FaniProScreenState();
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                title: 'فني برو',
+                debugShowCheckedModeBanner: false,
+                theme: ThemeData(
+                  useMaterial3: true,
+                  brightness: Brightness.dark,
+                  scaffoldBackgroundColor: const Color(0xFF121421),
+                  primaryColor: const Color(0xFF6C5CE7),
+                  fontFamily: 'sans-serif',
+                  cardTheme: CardTheme(
+                    color: const Color(0xFF1E2235),
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                home: const MainHomeScreen(),
+              );
+            }
           }
 
-          class _FaniProScreenState extends State<FaniProScreen> {
-            late final WebViewController _controller;
-            bool _isLoading = true;
+          class MainHomeScreen extends StatefulWidget {
+            const MainHomeScreen({super.key});
+
+            @override
+            State<MainHomeScreen> createState() => _MainHomeScreenState();
+          }
+
+          class _MainHomeScreenState extends State<MainHomeScreen> {
+            int _currentIndex = 0;
+
+            final List<Widget> _pages = const [
+              HomeFeedPage(),
+              PercentageCalculatorPage(),
+              NotificationsPage(),
+            ];
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF1E2235),
+                  elevation: 0,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.school, color: Color(0xFF6C5CE7)),
+                      SizedBox(width: 10),
+                      Text(
+                        'فني برو | بوابة التعليم الفني',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.share, color: Colors.white70),
+                      onPressed: () {
+                        Share.share(
+                          'حمل تطبيق فني برو لطلاب التعليم الفني والثانوي الصناعي:\nhttps://hrinnf.blogspot.com/',
+                          subject: 'تطبيق فني برو',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                body: _pages[_currentIndex],
+                bottomNavigationBar: NavigationBar(
+                  backgroundColor: const Color(0xFF1E2235),
+                  indicatorColor: const Color(0xFF6C5CE7).withOpacity(0.3),
+                  selectedIndex: _currentIndex,
+                  onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home, color: Color(0xFF6C5CE7)),
+                      label: 'الرئيسية',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.calculate_outlined),
+                      selectedIcon: Icon(Icons.calculate, color: Color(0xFF6C5CE7)),
+                      label: 'حساب النسبة',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.notifications_none),
+                      selectedIcon: Icon(Icons.notifications, color: Color(0xFF6C5CE7)),
+                      label: 'التنبيهات',
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class HomeFeedPage extends StatefulWidget {
+            const HomeFeedPage({super.key});
+
+            @override
+            State<HomeFeedPage> createState() => _HomeFeedPageState();
+          }
+
+          class _HomeFeedPageState extends State<HomeFeedPage> {
+            List<dynamic> posts = [];
+            bool isLoading = true;
 
             @override
             void initState() {
               super.initState();
+              fetchBloggerPosts();
+            }
 
-              final PlatformWebViewControllerCreationParams params =
-                  const PlatformWebViewControllerCreationParams();
-              final WebViewController controller =
-                  WebViewController.fromPlatformCreationParams(params);
-
-              controller
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
-                ..addJavaScriptChannel(
-                  'AppShare',
-                  onMessageReceived: (JavaScriptMessage message) {
-                    Share.share(message.message);
-                  },
-                )
-                ..setNavigationDelegate(
-                  NavigationDelegate(
-                    onPageStarted: (String url) => setState(() => _isLoading = true),
-                    onPageFinished: (String url) {
-                      setState(() => _isLoading = false);
-                      controller.runJavaScript("if (window.updateBadgeUI) { window.updateBadgeUI(); }");
-                    },
-                  ),
-                )
-                ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/'));
-
-              if (controller.platform is AndroidWebViewController) {
-                AndroidWebViewController.enableDebugging(false);
-                (controller.platform as AndroidWebViewController)
-                    .setMediaPlaybackRequiresUserGesture(false);
-              }
-
-              // استقبال الإشعار وتمريره للصفحة أثناء فتح التطبيق
-              OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-                final notif = event.notification;
-                final title = (notif.title ?? 'تنبيه جديد').replaceAll("'", "\\'");
-                final body = (notif.body ?? '').replaceAll("'", "\\'");
-                final launchUrl = (notif.additionalData?['launch_url'] ?? '').toString().replaceAll("'", "\\'");
-
-                controller.runJavaScript("""
-                  if (window.onNewNotificationReceived) {
-                    window.onNewNotificationReceived();
-                  }
-                  if (window.saveIncomingNotification) {
-                    window.saveIncomingNotification('$title', '$body', '$launchUrl');
-                  }
-                """);
-              });
-
-              // عند ضغط الطالب على الإشعار من شريط التنبيهات وهو خارج التطبيق
-              OneSignal.Notifications.addClickListener((event) {
-                final launchUrl = event.notification.additionalData?['launch_url'];
-                if (launchUrl != null && launchUrl.toString().isNotEmpty) {
-                  controller.loadRequest(Uri.parse(launchUrl.toString()));
+            Future<void> fetchBloggerPosts() async {
+              try {
+                final response = await http.get(
+                  Uri.parse('https://hrinnf.blogspot.com/feeds/posts/default?alt=json&max-results=10'),
+                );
+                if (response.statusCode == 200) {
+                  final data = json.decode(response.body);
+                  final entries = data['feed']?['entry'] ?? [];
+                  setState(() {
+                    posts = entries;
+                    isLoading = false;
+                  });
+                } else {
+                  setState(() => isLoading = false);
                 }
-              });
-
-              _controller = controller;
+              } catch (_) {
+                setState(() => isLoading = false);
+              }
             }
 
             @override
             Widget build(BuildContext context) {
-              return WillPopScope(
-                onWillPop: () async {
-                  if (await _controller.canGoBack()) {
-                    await _controller.goBack();
-                    return false;
-                  }
-                  return true;
-                },
-                child: Scaffold(
-                  backgroundColor: const Color(0xFF6C5CE7),
-                  body: SafeArea(
-                    child: Stack(
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // بطاقة ترحيبية
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        WebViewWidget(controller: _controller),
-                        if (_isLoading)
-                          const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
+                        Text(
+                          'أهلاً بك في فني برو 🎓',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'دليلك الشامل لنتائج الامتحانات، المناهج، وتنسيق المعاهد والكليات الفنية 2026',
+                          style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // الخدمات السريعة
+                  const Text('الخدمات السريعة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _buildQuickAction(Icons.account_balance, 'تنسيق المعاهد', 'https://hrinnf.blogspot.com/search/label/تنسيق'),
+                      const SizedBox(width: 10),
+                      _buildQuickAction(Icons.menu_book, 'المذكرات', 'https://hrinnf.blogspot.com/search/label/مذكرات'),
+                      const SizedBox(width: 10),
+                      _buildQuickAction(Icons.assignment, 'النتائج', 'https://hrinnf.blogspot.com/'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // أحدث الأخبار من المدونة
+                  const Text('أحدث الأخبار والبيانات', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  if (isLoading)
+                    const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator(color: Color(0xFF6C5CE7))))
+                  else if (posts.isEmpty)
+                    const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('لا توجد مقالات منشورة حالياً')))
+                  else
+                    ...posts.map((post) {
+                      final title = post['title']?['\$t'] ?? 'بدون عنوان';
+                      final published = post['published']?['\$t']?.toString().substring(0, 10) ?? '';
+                      final links = post['link'] as List<dynamic>? ?? [];
+                      final url = links.firstWhere((l) => l['rel'] == 'alternate', orElse: () => {'href': 'https://hrinnf.blogspot.com/'})['href'];
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6C5CE7).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            child: const Icon(Icons.article_outlined, color: Color(0xFF6C5CE7)),
                           ),
+                          title: Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                          subtitle: Text(
+                            published,
+                            style: const TextStyle(fontSize: 12, color: Colors.white38),
+                          ),
+                          trailing: const Icon(Icons.chevron_left, color: Colors.white54),
+                          onTap: () async {
+                            final uri = Uri.parse(url);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                ],
+              );
+            }
+
+            Widget _buildQuickAction(IconData icon, String title, String link) {
+              return Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final uri = Uri.parse(link);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E2235),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(icon, color: const Color(0xFF6C5CE7), size: 28),
+                        const SizedBox(height: 6),
+                        Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -285,18 +310,139 @@ jobs:
               );
             }
           }
+
+          // شاشة حساب النسبة المئوية
+          class PercentageCalculatorPage extends StatefulWidget {
+            const PercentageCalculatorPage({super.key});
+
+            @override
+            State<PercentageCalculatorPage> createState() => _PercentageCalculatorPageState();
+          }
+
+          class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
+            final TextEditingController _studentScore = TextEditingController();
+            final TextEditingController _totalScore = TextEditingController();
+            double? _result;
+
+            void _calculate() {
+              final double? score = double.tryParse(_studentScore.text);
+              final double? total = double.tryParse(_totalScore.text);
+
+              if (score != null && total != null && total > 0) {
+                setState(() {
+                  _result = (score / total) * 100;
+                });
+              }
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: ListView(
+                  children: [
+                    const Text('حاسبة النسبة المئوية للدبلومات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('أدخل مجموعك والمجموع الكلي لحساب النسبة الدقيقة للتنسيق', style: TextStyle(color: Colors.white60)),
+                    const SizedBox(height: 25),
+                    TextField(
+                      controller: _studentScore,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'مجموع الطالب',
+                        filled: true,
+                        fillColor: const Color(0xFF1E2235),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: _totalScore,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'المجموع الكلي (مثال: 700 أو 1000)',
+                        filled: true,
+                        fillColor: const Color(0xFF1E2235),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6C5CE7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('احسب النسبة المئوية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                    if (_result != null) ...[
+                      const SizedBox(height: 30),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E2235),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF6C5CE7)),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text('النسبة المئوية المحسوبة', style: TextStyle(color: Colors.white70)),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${_result!.toStringAsFixed(2)} %',
+                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF6C5CE7)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }
+          }
+
+          // شاشة التنبيهات
+          class NotificationsPage extends StatelessWidget {
+            const NotificationsPage({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.notifications_active_outlined, size: 70, color: const Color(0xFF6C5CE7).withOpacity(0.5)),
+                      const SizedBox(height: 16),
+                      const Text('سجل التنبيهات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'لا توجد تنبيهات جديدة في الوقت الحالي. سيتم تنبيهك فور إعلان نتائج التنسيق أو فتح باب التقديمات.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white54, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
           EOF
 
-      - name: Build Both AAB and APK
+      - name: Build Flutter AAB and APK
         run: |
           cd app_project
-          flutter build appbundle --release --no-pub
-          flutter build apk --release --no-pub
+          flutter build appbundle --release
+          flutter build apk --release
 
-      - name: Upload Both Files
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fani-pro-packages
+          name: fani-pro-native-packages
           path: |
             app_project/build/app/outputs/bundle/release/app-release.aab
             app_project/build/app/outputs/flutter-apk/app-release.apk
