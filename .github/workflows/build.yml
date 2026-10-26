@@ -28,16 +28,85 @@ jobs:
           flutter pub add onesignal_flutter
           flutter pub add share_plus
 
-      - name: Configure Android Settings & Permissions
+      - name: Write AndroidManifest
         run: |
-          cd app_project
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>' android/app/src/main/AndroidManifest.xml
-          sed -i 's/<application/<application android:hardwareAccelerated="true"/g' android/app/src/main/AndroidManifest.xml
-          
-          # استبدال شامل ودقيق لـ minSdkVersion ليصبح 21 بدون فشل
-          sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle
-          sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' android/app/build.gradle
-          sed -i 's/versionCode.*/versionCode 11/g' android/app/build.gradle
+          cat << 'EOF' > app_project/android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+              <application
+                  android:label="فني برو"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher"
+                  android:hardwareAccelerated="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <meta-data
+                        android:name="io.flutter.embedding.android.NormalTheme"
+                        android:resource="@style/NormalTheme"
+                        />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2" />
+              </application>
+          </manifest>
+          EOF
+
+      - name: Write build.gradle Cleanly
+        run: |
+          cat << 'EOF' > app_project/android/app/build.gradle
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+
+          android {
+              namespace = "com.pro.ap4016842.skn"
+              compileSdk = 34
+              ndkVersion = flutter.ndkVersion
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_1_8
+                  targetCompatibility = JavaVersion.VERSION_1_8
+              }
+
+              kotlinOptions {
+                  jvmTarget = "1.8"
+              }
+
+              defaultConfig {
+                  applicationId = "com.pro.ap4016842.skn"
+                  minSdk = 21
+                  targetSdk = 34
+                  versionCode = 11
+                  versionName = "1.1"
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig = signingConfigs.debug
+                  }
+              }
+          }
+
+          flutter {
+              source = "../.."
+          }
+          EOF
 
       - name: Write Full Optimized Flutter Code
         run: |
@@ -51,7 +120,6 @@ jobs:
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
             
-            // تهيئة OneSignal
             OneSignal.Debug.setLogLevel(OSLogLevel.none);
             OneSignal.initialize("e405d6b4-3828-482c-b294-5a77c30cdd9a");
             OneSignal.Notifications.requestPermission(true);
