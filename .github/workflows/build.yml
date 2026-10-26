@@ -1,0 +1,96 @@
+name: Build Fani Pro AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Create Flutter Project
+        run: |
+          flutter create --org com.pro.ap4016842 --project-name skn app_project
+          cd app_project
+          flutter pub add webview_flutter
+
+      - name: Configure Android Settings & Permissions
+        run: |
+          cd app_project
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
+          sed -i 's/versionCode flutterVersionCode.toInteger()/versionCode 2/g' android/app/build.gradle
+
+      - name: Write Webview Code
+        run: |
+          cat << 'EOF' > app_project/lib/main.dart
+          import 'package:flutter/material.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
+
+          void main() {
+            WidgetsFlutterBinding.ensureInitialized();
+            runApp(const MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: FaniProScreen(),
+            ));
+          }
+
+          class FaniProScreen extends StatefulWidget {
+            const FaniProScreen({super.key});
+
+            @override
+            State<FaniProScreen> createState() => _FaniProScreenState();
+          }
+
+          class _FaniProScreenState extends State<FaniProScreen> {
+            late final WebViewController _controller;
+
+            @override
+            void initState() {
+              super.initState();
+              _controller = WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/?m=1'));
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return WillPopScope(
+                onWillPop: () async {
+                  if (await _controller.canGoBack()) {
+                    await _controller.goBack();
+                    return false;
+                  }
+                  return true;
+                },
+                child: Scaffold(
+                  body: SafeArea(
+                    child: WebViewWidget(controller: _controller),
+                  ),
+                ),
+              );
+            }
+          }
+          EOF
+
+      - name: Build Android App Bundle (AAB)
+        run: |
+          cd app_project
+          flutter build appbundle --release --no-pub
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fani-pro-release
+          path: app_project/build/app/outputs/bundle/release/app-release.aab
