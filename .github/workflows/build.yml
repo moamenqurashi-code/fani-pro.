@@ -24,23 +24,35 @@ jobs:
           flutter create --org com.pro.ap4016842 --project-name skn app_project
           cd app_project
           flutter pub add webview_flutter
+          flutter pub add webview_flutter_android
+          flutter pub add onesignal_flutter
+          flutter pub add share_plus
 
       - name: Configure Android Settings & Permissions
         run: |
           cd app_project
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<application android:hardwareAccelerated="true"/g' android/app/src/main/AndroidManifest.xml
           sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
-          sed -i 's/versionCode flutterVersionCode.toInteger()/versionCode 2/g' android/app/build.gradle
+          sed -i 's/versionCode flutterVersionCode.toInteger()/versionCode 11/g' android/app/build.gradle
 
-      - name: Write Webview Code
+      - name: Write Full Optimized Flutter Code
         run: |
           cat << 'EOF' > app_project/lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:webview_flutter/webview_flutter.dart';
           import 'package:webview_flutter_android/webview_flutter_android.dart';
+          import 'package:onesignal_flutter/onesignal_flutter.dart';
+          import 'package:share_plus/share_plus.dart';
 
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
+            
+            // تهيئة خدمة OneSignal للإشعارات
+            OneSignal.Debug.setLogLevel(OSLogLevel.none);
+            OneSignal.initialize("e405d6b4-3828-482c-b294-5a77c30cdd9a");
+            OneSignal.Notifications.requestPermission(true);
+
             runApp(const MaterialApp(
               debugShowCheckedModeBanner: false,
               home: FaniProScreen(),
@@ -56,11 +68,12 @@ jobs:
 
           class _FaniProScreenState extends State<FaniProScreen> {
             late final WebViewController _controller;
+            bool _isLoading = true;
 
             @override
             void initState() {
               super.initState();
-              
+
               final PlatformWebViewControllerCreationParams params =
                   const PlatformWebViewControllerCreationParams();
               final WebViewController controller =
@@ -69,21 +82,50 @@ jobs:
               controller
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
                 ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
+                ..addJavaScriptChannel(
+                  'AppShare',
+                  onMessageReceived: (JavaScriptMessage message) {
+                    Share.share(message.message);
+                  },
+                )
                 ..setNavigationDelegate(
                   NavigationDelegate(
-                    onNavigationRequest: (NavigationRequest request) {
-                      return NavigationDecision.navigate;
+                    onPageStarted: (String url) {
+                      setState(() => _isLoading = true);
+                    },
+                    onPageFinished: (String url) {
+                      setState(() => _isLoading = false);
+                      // تحديث عداد الجرس وتنسيق الواجهة فور تحميل أي صفحة
+                      controller.runJavaScript("if (window.updateBadgeUI) { window.updateBadgeUI(); }");
                     },
                   ),
                 )
                 ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/'));
 
-              // تفعيل الـ DOM Storage وحفظ الملفات في الأندرويد لمنع الكابتشا
+              // تفعيل تسريع الرسوم وحفظ التخزين الداخلي (حفظ التقدم)
               if (controller.platform is AndroidWebViewController) {
                 AndroidWebViewController.enableDebugging(false);
-                (controller.platform as AndroidWebViewController)
-                    .setMediaPlaybackRequiresUserGesture(false);
+                final androidController = controller.platform as AndroidWebViewController;
+                androidController.setMediaPlaybackRequiresUserGesture(false);
+                androidController.setDomStorageEnabled(true);
               }
+
+              // الاستماع للإشعارات الواردة وتمرير بياناتها لصفحة بلوجر
+              OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+                final notif = event.notification;
+                final title = (notif.title ?? 'تنبيه جديد').replaceAll("'", "\\'");
+                final body = (notif.body ?? '').replaceAll("'", "\\'");
+                final launchUrl = (notif.additionalData?['launch_url'] ?? '').toString().replaceAll("'", "\\'");
+
+                controller.runJavaScript("""
+                  if (window.onNewNotificationReceived) {
+                    window.onNewNotificationReceived();
+                  }
+                  if (window.saveIncomingNotification) {
+                    window.saveIncomingNotification('$title', '$body', '$launchUrl');
+                  }
+                """);
+              });
 
               _controller = controller;
             }
@@ -101,7 +143,17 @@ jobs:
                 child: Scaffold(
                   backgroundColor: const Color(0xFF6C5CE7),
                   body: SafeArea(
-                    child: WebViewWidget(controller: _controller),
+                    child: Stack(
+                      children: [
+                        WebViewWidget(controller: _controller),
+                        if (_isLoading)
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
