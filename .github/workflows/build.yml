@@ -37,6 +37,7 @@ jobs:
           cat << 'EOF' > app_project/lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:webview_flutter/webview_flutter.dart';
+          import 'package:webview_flutter_android/webview_flutter_android.dart';
 
           void main() {
             WidgetsFlutterBinding.ensureInitialized();
@@ -59,9 +60,32 @@ jobs:
             @override
             void initState() {
               super.initState();
-              _controller = WebViewController()
+              
+              final PlatformWebViewControllerCreationParams params =
+                  const PlatformWebViewControllerCreationParams();
+              final WebViewController controller =
+                  WebViewController.fromPlatformCreationParams(params);
+
+              controller
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/?m=1'));
+                ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
+                ..setNavigationDelegate(
+                  NavigationDelegate(
+                    onNavigationRequest: (NavigationRequest request) {
+                      return NavigationDecision.navigate;
+                    },
+                  ),
+                )
+                ..loadRequest(Uri.parse('https://hrinnf.blogspot.com/'));
+
+              // تفعيل الـ DOM Storage وحفظ الملفات في الأندرويد لمنع الكابتشا
+              if (controller.platform is AndroidWebViewController) {
+                AndroidWebViewController.enableDebugging(false);
+                (controller.platform as AndroidWebViewController)
+                    .setMediaPlaybackRequiresUserGesture(false);
+              }
+
+              _controller = controller;
             }
 
             @override
@@ -75,6 +99,7 @@ jobs:
                   return true;
                 },
                 child: Scaffold(
+                  backgroundColor: const Color(0xFF6C5CE7),
                   body: SafeArea(
                     child: WebViewWidget(controller: _controller),
                   ),
