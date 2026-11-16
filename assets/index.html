@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ثانوية برو - بوابة التفوق</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 90px; direction: rtl; text-align: right; }
+
+        /* الشريط العلوي */
+        .header { position: sticky; top: 0; background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .brand-text h1 { font-size: 15px; font-weight: 800; line-height: 1.1; }
+        .brand-text span { font-size: 10px; opacity: 0.8; font-weight: 600; }
+        .notif-btn { width: 38px; height: 38px; background: rgba(255,255,255,0.15); border: none; border-radius: 10px; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; }
+        .notif-badge { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
+
+        /* المحتوى والشبكة */
+        .container { padding: 12px; }
+        .section-title { font-size: 13.5px; font-weight: 800; color: var(--text); margin: 14px 4px 8px; display: flex; align-items: center; gap: 6px; }
+        .section-title i { color: var(--primary); }
+        
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .card { background: var(--surface); border-radius: 14px; padding: 12px; border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.03); text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.1s; }
+        .card:active { transform: scale(0.97); }
+        
+        .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; margin-bottom: 8px; }
+        .card h3 { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+        .card p { font-size: 10px; color: var(--text-light); font-weight: 600; }
+
+        /* شريط التنقل السفلي */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-light); font-size: 10px; font-weight: 700; gap: 2px; }
+        .nav-item i { font-size: 18px; }
+        .nav-item.active { color: var(--primary); }
+
+        /* شات المجتمع */
+        .chat-card { background: linear-gradient(135deg, #1e1b4b, #312e81); border-radius: 14px; padding: 14px; color: white; margin-top: 14px; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .online-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; display: inline-block; margin-left: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- الشريط العلوي مع زر الإشعارات -->
+    <div class="header">
+        <div class="brand">
+            <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="brand-text">
+                <h1>ثانوية برو</h1>
+                <span>بوابة التفوق الدراسي 2027</span>
+            </div>
+        </div>
+        <button class="notif-btn" onclick="alert('لا توجد إشعارات جديدة حالياً، تابعنا لمعرفة كل التحديثات!')">
+            <i class="fas fa-bell"></i>
+            <span class="notif-badge"></span>
+        </button>
+    </div>
+
+    <div class="container">
+        
+        <div class="section-title"><i class="fas fa-book-open"></i> مناهج وشروحات الثانوية العامة</div>
+        <div class="grid-2">
+            <a href="https://hrinnf.blogspot.com/" class="card" target="_blank">
+                <div class="card-icon" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);"><i class="fas fa-language"></i></div>
+                <h3>اللغة العربية والفرعيات</h3>
+                <p>النحو، البلاغة، والأدب</p>
+            </a>
+            <a href="https://hrinnf.blogspot.com/" class="card" target="_blank">
+                <div class="card-icon" style="background: linear-gradient(135deg, #059669, #047857);"><i class="fas fa-globe"></i></div>
+                <h3>اللغة الإنجليزية واللغات</h3>
+                <p>الكلمات، القواعد والقطع</p>
+            </a>
+            <a href="https://hrinnf.blogspot.com/" class="card" target="_blank">
+                <div class="card-icon" style="background: linear-gradient(135deg, #d97706, #b45309);"><i class="fas fa-atom"></i></div>
+                <h3>الفيزياء والرياضيات</h3>
+                <p>المسائل والتحليل والامتحانات</p>
+            </a>
+            <a href="https://hrinnf.blogspot.com/" class="card" target="_blank">
+                <div class="card-icon" style="background: linear-gradient(135deg, #dc2626, #b91c1c);"><i class="fas fa-flask"></i></div>
+                <h3>الكيمياء والأحياء</h3>
+                <p>المعادلات والرسومات والأبواب</p>
+            </a>
+        </div>
+
+        <div class="section-title"><i class="fas fa-toolbox"></i> أدوات الطالب الذكية</div>
+        <div class="grid-2">
+            <div class="card" onclick="alert('اضغط على أيقونة الكشكول في تطبيق فني برو لفتح 10 ورقات سلك للكتابة والتلوين!')">
+                <div class="card-icon" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);"><i class="fas fa-pen-nib"></i></div>
+                <h3>كشكول الملاحظات 📝</h3>
+                <p>رسم وكتابة وتلخيص الدروس</p>
+            </div>
+            <div class="card" onclick="alert('حاسبة المجموع والنسبة المئوية تعمل بكفاءة تامة!')">
+                <div class="card-icon" style="background: linear-gradient(135deg, #065f46, #047857);"><i class="fas fa-calculator"></i></div>
+                <h3>حاسبة المجاميع 🧮</h3>
+                <p>احسب نسبتك من 410 بدقة</p>
+            </div>
+        </div>
+
+        <!-- مجتمع الطلاب -->
+        <div class="chat-card">
+            <div class="chat-header">
+                <strong style="font-size: 13px;"><i class="fas fa-comments"></i> شات طلاب الثانوية العامة</strong>
+                <span style="font-size: 10px; background: rgba(52,211,153,0.2); color: #34d399; padding: 2px 8px; border-radius: 10px;"><span class="online-dot"></span> 320 متصل</span>
+            </div>
+            <p style="font-size: 11px; opacity: 0.8; margin-bottom: 10px; line-height: 1.4;">مساحة مخصصة لتبادل الملخصات والأسئلة وحل تدريبات الأوبن بوك.</p>
+            <a href="https://t.me/" target="_blank" style="display: block; background: #2563eb; color: white; text-align: center; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: bold;">انضم لقروب المناقشة ←</a>
+        </div>
+
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active"><i class="fas fa-home"></i>الرئيسية</a>
+        <a href="https://hrinnf.blogspot.com/" class="nav-item" target="_blank"><i class="fas fa-book"></i>المذكرات</a>
+        <a href="https://hrinnf.blogspot.com/" class="nav-item" target="_blank"><i class="fas fa-poll"></i>النتائج</a>
+        <a href="https://hrinnf.blogspot.com/" class="nav-item" target="_blank"><i class="fas fa-share-alt"></i>مشاركة</a>
+    </div>
+
+</body>
+</html>
